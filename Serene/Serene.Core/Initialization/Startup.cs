@@ -1,13 +1,15 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
-using Serene.AppServices;
 using Serenity;
 using Serenity.Abstractions;
 using Serenity.Data;
@@ -15,34 +17,54 @@ using Serenity.Extensions.DependencyInjection;
 using Serenity.Localization;
 using Serenity.Services;
 using Serenity.Web.Middleware;
+using Serene.AppServices;
+using System;
 using System.Data.SqlClient;
 using System.IO;
 
 namespace Serene
 {
-    public class Startup
+    public partial class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment hostEnvironment)
         {
             Configuration = configuration;
+            HostEnvironment = hostEnvironment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment HostEnvironment { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
-            services.AddMvc(options =>
+            services.AddAntiforgery(options => 
             {
-                options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+                options.HeaderName = "X-CSRF-TOKEN";
+            });
+
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                options.AllowSynchronousIO = true;
+            });
+
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.AllowSynchronousIO = true;
+            });
+
+            var builder = services.AddControllersWithViews(options =>
+            {
+                options.Filters.Add(typeof(AutoValidateAntiforgeryTokenAttribute));
                 options.Filters.Add(typeof(AntiforgeryCookieResultFilterAttribute));
                 options.ModelBinderProviders.Insert(0, new ServiceEndpointModelBinderProvider());
                 options.Conventions.Add(new ServiceEndpointActionModelConvention());
-            })
-            .AddJsonOptions(options =>
+            }).AddNewtonsoftJson(options =>
             {
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
+            
+            if (HostEnvironment.IsDevelopment())
+                builder.AddRazorRuntimeCompilation();
 
             services.AddAuthentication(o =>
             {
@@ -54,6 +76,15 @@ namespace Serene
                 o.Cookie.Name = ".AspNetAuth";
                 o.LoginPath = new PathString("/Account/Login/");
                 o.AccessDeniedPath = new PathString("/Account/AccessDenied");
+                o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                o.SlidingExpiration = true;
+            });
+
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddConfiguration(Configuration.GetSection("Logging"));
+                loggingBuilder.AddConsole();
+                loggingBuilder.AddDebug();
             });
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -68,7 +99,7 @@ namespace Serene
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IAntiforgery antiforgery)
         {
             Serenity.Extensibility.ExtensibilityHelper.SelfAssemblies = new System.Reflection.Assembly[]
             {
@@ -95,9 +126,6 @@ namespace Serene
             textRegistry.AddJsonTexts(System.IO.Path.Combine(env.WebRootPath, "Scripts/site/texts".Replace('/', Path.DirectorySeparatorChar)));
             textRegistry.AddJsonTexts(System.IO.Path.Combine(env.ContentRootPath, "App_Data/texts".Replace('/', Path.DirectorySeparatorChar)));
 
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
             var reqLocOpt = new RequestLocalizationOptions();
             reqLocOpt.SupportedUICultures = UserCultureProvider.SupportedCultures;
             reqLocOpt.SupportedCultures = UserCultureProvider.SupportedCultures;
@@ -112,14 +140,20 @@ namespace Serene
             else
             {
                 app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
             }
 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
+            app.UseRouting();
             app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseDynamicScripts();
-            app.UseMvc(routes =>
-            {
+			app.UseExceptional();
+
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
             });
 
             DataMigrations.Initialize();

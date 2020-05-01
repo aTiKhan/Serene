@@ -16,6 +16,9 @@
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="$projectname$.csproj" File="Serene.Core.csproj" ReplaceParameters="true">
+      <Folder Name=".config" TargetFolderName=".config">
+        <ProjectItem ReplaceParameters="true" TargetFileName="dotnet-tools.json">dotnet-tools.json</ProjectItem>
+      </Folder>
       <ProjectItem ReplaceParameters="true" TargetFileName="appsettings.json">appsettings.json</ProjectItem>
       <Folder Name="Imports" TargetFolderName="Imports">
         <Folder Name="ClientTypes" TargetFolderName="ClientTypes">
@@ -45,6 +48,7 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.LanguageForm.ts">Administration.LanguageForm.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.LanguageRow.ts">Administration.LanguageRow.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.LanguageService.ts">Administration.LanguageService.ts</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Administration.PermissionKeys.ts">Administration.PermissionKeys.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.RoleColumns.ts">Administration.RoleColumns.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.RoleForm.ts">Administration.RoleForm.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Administration.RolePermissionListRequest.ts">Administration.RolePermissionListRequest.ts</ProjectItem>
@@ -97,7 +101,6 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="BasicSamples.ProductExcelImportForm.ts">BasicSamples.ProductExcelImportForm.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="BasicSamples.ProductExcelImportService.ts">BasicSamples.ProductExcelImportService.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="BasicSamples.StaticTextBlockForm.ts">BasicSamples.StaticTextBlockForm.ts</ProjectItem>
-          <ProjectItem ReplaceParameters="true" TargetFileName="Common.Pages.UploadResponse.ts">Common.Pages.UploadResponse.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Common.UserPreferenceRetrieveRequest.ts">Common.UserPreferenceRetrieveRequest.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Common.UserPreferenceRetrieveResponse.ts">Common.UserPreferenceRetrieveResponse.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Common.UserPreferenceRow.ts">Common.UserPreferenceRow.ts</ProjectItem>
@@ -146,6 +149,7 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.OrderRow.ts">Northwind.OrderRow.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.OrderService.ts">Northwind.OrderService.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.OrderShippingState.ts">Northwind.OrderShippingState.ts</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.PermissionKeys.ts">Northwind.PermissionKeys.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.ProductColumns.ts">Northwind.ProductColumns.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.ProductForm.ts">Northwind.ProductForm.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.ProductLangRow.ts">Northwind.ProductLangRow.ts</ProjectItem>
@@ -173,6 +177,7 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.TerritoryRow.ts">Northwind.TerritoryRow.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="Northwind.TerritoryService.ts">Northwind.TerritoryService.ts</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="ScriptUserDefinition.ts">ScriptUserDefinition.ts</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Texts.ts">Texts.ts</ProjectItem>
         </Folder>
       </Folder>
       <Folder Name="Initialization" TargetFolderName="Initialization">
@@ -641,6 +646,7 @@
               <ProjectItem ReplaceParameters="true" TargetFileName="ForgotPasswordPanel.ts">ForgotPasswordPanel.ts</ProjectItem>
               <ProjectItem ReplaceParameters="true" TargetFileName="ForgotPasswordRequest.cs">ForgotPasswordRequest.cs</ProjectItem>
             </Folder>
+            <ProjectItem ReplaceParameters="true" TargetFileName="LoginPanel.ts">LoginPanel.ts</ProjectItem>
             <ProjectItem ReplaceParameters="true" TargetFileName="LoginRequest.cs">LoginRequest.cs</ProjectItem>
             <Folder Name="ResetPassword" TargetFolderName="ResetPassword">
               <ProjectItem ReplaceParameters="true" TargetFileName="AccountPage.ResetPassword.cs">AccountPage.ResetPassword.cs</ProjectItem>
@@ -1294,6 +1300,13 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="jquery.icheck.js">jquery.icheck.js</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="jquery.icheck.min.js">jquery.icheck.min.js</ProjectItem>
           <ProjectItem ReplaceParameters="true" TargetFileName="jquery.icheck.min.js.map">jquery.icheck.min.js.map</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.js">jquery-3.3.1.js</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.min.js">jquery-3.3.1.min.js</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.min.map">jquery-3.3.1.min.map</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.slim.js">jquery-3.3.1.slim.js</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.slim.min.js">jquery-3.3.1.slim.min.js</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1.slim.min.map">jquery-3.3.1.slim.min.map</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="jquery-3.3.1-vsdoc.js">jquery-3.3.1-vsdoc.js</ProjectItem>
           <Folder Name="jvectormap" TargetFolderName="jvectormap">
             <ProjectItem ReplaceParameters="true" TargetFileName="jquery-jvectormap-1.2.2.css">jquery-jvectormap-1.2.2.css</ProjectItem>
             <ProjectItem ReplaceParameters="true" TargetFileName="jquery-jvectormap-1.2.2.min.js">jquery-jvectormap-1.2.2.min.js</ProjectItem>
@@ -1312,6 +1325,12 @@
           <Folder Name="raphael" TargetFolderName="raphael">
             <ProjectItem ReplaceParameters="true" TargetFileName="raphael.js">raphael.js</ProjectItem>
             <ProjectItem ReplaceParameters="true" TargetFileName="raphael-min.js">raphael-min.js</ProjectItem>
+          </Folder>
+          <Folder Name="serenity" TargetFolderName="serenity">
+            <ProjectItem ReplaceParameters="true" TargetFileName="Serenity.CoreLib.d.ts">Serenity.CoreLib.d.ts</ProjectItem>
+            <ProjectItem ReplaceParameters="true" TargetFileName="Serenity.Pro.App.d.ts">Serenity.Pro.App.d.ts</ProjectItem>
+            <ProjectItem ReplaceParameters="true" TargetFileName="Serenity.Pro.App.js">Serenity.Pro.App.js</ProjectItem>
+            <ProjectItem ReplaceParameters="true" TargetFileName="Serenity.Pro.App.min.js">Serenity.Pro.App.min.js</ProjectItem>
           </Folder>
           <Folder Name="site" TargetFolderName="site">
             <ProjectItem ReplaceParameters="true" TargetFileName="ScriptBundles.json">ScriptBundles.json</ProjectItem>
@@ -1396,11 +1415,13 @@
       <feature key="BasicSamples">
         <files include="wwwroot\Content\site\site.basicsamples.less" />
         <files include="Modules\BasicSamples" />
+        <files include="Imports\ClientTypes\**\BasicSamples.*" />
         <files include="Imports\ServerTypings\**\BasicSamples.*" />
         <files include="wwwroot\Scripts\site\texts\samples" />
       </feature>
       <feature key="Northwind">
         <files include="wwwroot\Content\site\site.northwind.less" />
+        <files include="Imports\ClientTypes\**\Northwind.*" />
         <files include="Imports\ServerTypings\**\Northwind.*" />
         <files include="Modules\Northwind" />
         <files include="Migrations\NorthwindDB" />

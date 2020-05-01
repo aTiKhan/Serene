@@ -125,7 +125,7 @@ Func<string, JObject> loadJson = path => {
 };
 
 
-Action<string, string> patchProjectRefs = (csproj, version) => {
+Action<string, string, List<Tuple<string, string>>> patchProjectRefs = (csproj, version, webPackages) => {
     var changed = false;
 	
 	var csprojElement = loadCsProj(csproj);
@@ -136,12 +136,15 @@ Action<string, string> patchProjectRefs = (csproj, version) => {
 			include.Value != null && 
 			include.Value.StartsWith("Serenity.") &&
 			!include.Value.StartsWith("Serenity.FluentMigrator") &&
-			include.Value != "Serenity.Web.Assets" &&
 			include.Value != "Serenity.Web.Tooling") {
 			var versionAttr = x.Attribute("Version");
+            var v = version;
+            if (include.Value == "Serenity.Web.Assets") {
+				v = webPackages.First(z => z.Item1 == include.Value).Item2;
+			}
 			if (versionAttr != null && versionAttr.Value != version)
 			{
-				versionAttr.Value = version;
+				versionAttr.Value = v;
 				changed = true;
 			}
 		}
@@ -168,26 +171,19 @@ Task("PrepareVSIX")
 	
     NuGetUpdate(System.IO.Path.Combine(r, @"Serene\Serene.Web\Serene.Web.csproj"), new NuGetUpdateSettings {
         Id = new List<string> {
-            "Serenity.Web"
+            "Serenity.Web",
+            "Serenity.Scripts",
+            "Serenity.CodeGenerator",
+            "Serenity.Web.Tooling",
+            "Serenity.Web.Assets"
         },
         ToolPath = System.IO.Path.Combine(r, @"Serenity\tools\NuGet\nuget.exe"),
         ArgumentCustomization = args => {
 			return args.Append("-FileConflictAction Overwrite")
-				.Append(@"-MsBuildPath ""C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin""");
+				.Append(@"-MsBuildPath ""C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin""");
 		}
     });
 
-    NuGetUpdate(System.IO.Path.Combine(r, @"Serene\Serene.Web\Serene.Web.csproj"), new NuGetUpdateSettings {
-        Id = new List<string> {
-            "Serenity.CodeGenerator"
-        },
-        ToolPath = System.IO.Path.Combine(r, @"Serenity\tools\NuGet\nuget.exe"),
-        ArgumentCustomization = args => {
-			return args.Append("-FileConflictAction Overwrite")
-				.Append(@"-MsBuildPath ""C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin""");
-		}
-    });
-	
     var serenePackagesFolder = r + @"packages\";
     var vsixProjFile = r + @"Template\Serene.Template.csproj";
     var vsixManifestFile = r + @"Template\source.extension.vsixmanifest";
@@ -247,14 +243,11 @@ Task("PrepareVSIX")
     
 	var webSkipPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
 		"bootstrap",
-		"Dapper",
 		"FluentMigrator",
 		"Newtonsoft.Json",
-		"Microsoft.AspNet.Mvc",
 		"Microsoft.AspNet.Razor",
 		"Microsoft.AspNet.WebPages",
 		"Microsoft.Web.Infrastructure",
-		"Nuglify",
 		"jQuery",
 		"jQuery.UI.Combined",
 		"jQuery.Validation",
@@ -264,7 +257,6 @@ Task("PrepareVSIX")
 		"Serenity.Data",
 		"Serenity.Data.Entity",
 		"Serenity.Services",
-		"Serenity.Web.Assets",
 		"toastr"
 	};
 	
@@ -306,6 +298,8 @@ Task("PrepareVSIX")
 			}
 		
 			var itemList = getCsProjItems(csprojElement);
+            foreach (var dup in itemList.Select(itemToFile).ToLookup(x => x).Where(x => x.Count() > 1))
+                Console.WriteLine("Duplicate: " + dup.Key);
 			byName = itemList.ToDictionary(itemToFile);
 			fileList = itemList.Select(itemToFile).ToList();
 		}        
@@ -380,6 +374,7 @@ Task("PrepareVSIX")
             bool replaceParameters = extension == ".cs" ||
                 extension == ".ts" ||
                 extension == ".d.ts" ||
+                extension == ".tsx" ||
                 extension == ".config" ||
                 extension == ".tt" ||
                 extension == ".css" ||
@@ -462,16 +457,25 @@ Task("PrepareVSIX")
 
     MSBuild("./Serene.sln", s => {
         s.SetConfiguration(configuration);
-        s.ToolPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
+		s.SetVerbosity(Verbosity.Minimal);
+        s.ToolPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe";
     });
     
+	
     var webPackages = parsePackages(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(sereneWebProj), "packages.config"));  
     updateVsixProj(webPackages);
-	patchProjectRefs(sereneCoreWebProj, serenityVersion);
+	patchProjectRefs(sereneCoreWebProj, serenityVersion, webPackages);
 	
     var exitCode = StartProcess("dotnet", "restore " + sereneCoreWebProj);
     if (exitCode > 0)
         throw new Exception("Error while restoring " + sereneCoreWebProj);	
+
+    exitCode = StartProcess("dotnet", new ProcessSettings {
+		Arguments = "tool update sergen",
+		WorkingDirectory = System.IO.Path.GetDirectoryName(sereneCoreWebProj)
+	});
+    if (exitCode > 0)
+        throw new Exception("Error while tool updating " + sereneCoreWebProj);	
 
 	exitCode = StartProcess("dotnet", new ProcessSettings
 	{
@@ -479,7 +483,7 @@ Task("PrepareVSIX")
 		WorkingDirectory = System.IO.Path.GetDirectoryName(sereneCoreWebProj)
 	});
     if (exitCode > 0)
-        throw new Exception("Error while sergen restoring " + sereneCoreWebProj);	        
+        throw new Exception("Error while sergen restoring " + sereneCoreWebProj);
     
     if (System.IO.Directory.Exists(webTemplateFolder)) 
         System.IO.Directory.Delete(webTemplateFolder, true);	

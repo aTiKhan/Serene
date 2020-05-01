@@ -50,7 +50,7 @@ function downloadHttps(url, cb) {
             data.push(chunk);
             dataLen += chunk.length;
         }).on('end', function() {
-            var buf = new Buffer(dataLen);
+            var buf = Buffer.alloc(dataLen);
             for (var i=0, len = data.length, pos = 0; i < len; i++) { 
                 data[i].copy(buf, pos); 
                 pos += data[i].length; 
@@ -128,12 +128,21 @@ if (!fs.existsSync(cacheDir))
 
 console.log('Reading latest template version from VSGallery...');
 
-https.get({
+// The following post data reflects that which is sent via XHR when using web UI. I have not attempted to reduce this to the strictly necessary values.
+var postdata = JSON.stringify({"assetTypes":null,"filters":[{"criteria":[{"filterType":7,"value":"VolkanCeylan.SereneSerenityApplicationTemplate"}],"direction":2,"pageSize":100,"pageNumber":1,"sortBy":0,"sortOrder":0,"pagingToken":null}],"flags":71});
+
+var req = https.request({
+	method: 'POST',
     host: 'marketplace.visualstudio.com',
-    path: '/items?itemName=VolkanCeylan.SereneSerenityApplicationTemplate',
+    path: '/_apis/public/gallery/extensionquery',
     port: 443,
-    headers: { 'user-agent': 'Mozilla/5.0' }
+    headers: {
+    	'accept': 'application/json;api-version=5.1-preview.1;excludeUrls=true',
+		'content-type': 'application/json',
+		'content-length': postdata.length
+	}
 }, function(res) {
+
     if (!(res.statusCode >= 200 && res.statusCode <= 300)) {
         console.error("Couldn't read template page from VSGallery. Got status code " + res.statusCode);
         process.exit();
@@ -142,63 +151,47 @@ https.get({
     var str = "";
     res.on('data', function(d) { str += d; });
     res.on('end', function() {
-        var searchStart = '<script class="vss-extension" defer="defer" type="application/json">';
-        var searchEnd = '</script>';
-        var idx = str.indexOf(searchStart);
-        if (idx <= 0) {
-            console.error("Couldn't read template version from VSGallery.");
+
+        try {
+            var data = JSON.parse(str);
+        } catch (error) {
+            console.error("Couldn't read template version from VSGallery. Invalid JSON.");
             process.exit();
         }
 
-        var idx2 = str.indexOf(searchEnd, idx);
-        if (idx2 <= 0 || (idx2 - idx <= 20)) {
-            console.error("Couldn't read template version from VSGallery.");
+        if (!(data && data.results && data.results.length === 1 && data.results[0].extensions && data.results[0].extensions.length === 1)) {
+            console.error("Couldn't read template version from VSGallery. Invalid template data.");
             process.exit();
         }
 
-        var json = str.substring(idx + searchStart.length, idx2).trim();
-        if (!json.startsWith('{') || !json.endsWith('}')) {
-            console.error("Couldn't read template version from VSGallery.");
+        var ext = data.results[0].extensions[0]; // extract first extension from results data
+
+        if (!(ext.versions && ext.versions.length > 0)) {
+            console.error("Couldn't read template version from VSGallery. No version data.");
             process.exit();
         }
 
-        var data = JSON.parse(json);
-        if (!data.versions) {
-            console.error("Couldn't read template version from VSGallery.");
-            process.exit();            
+        var ext_ver = ext.versions[0]; // extract first version from extension versions
+
+        var version = ext_ver.version;
+
+        if (!ext_ver.assetUri) {
+            console.error("Couldn't read template version from VSGallery. No asset URI.");
+            process.exit();
         }
 
-        var version = data.versions[data.versions.length - 1];
-        if (!version.version || !version.files) {
-            console.error("Couldn't read template version from VSGallery.");
-            process.exit();            
-        }
-
-        var cacheZip = path.resolve(cacheDir, 'Serene.Template.' + version.version + '.vsix');
+        var cacheZip = path.resolve(cacheDir, 'Serene.Template.' + version + '.vsix');
         if (fs.existsSync(cacheZip)) {
             console.log('You already have a cached copy of latest version.')
             console.log('');
             useCacheZip(cacheZip);
         }
         else {
-            var assetSource = null;
-            for (var i = 0; i < version.files.length; i++) {
-                var f = version.files[i];
-                if (f && f.assetType && f.assetType.endsWith('.vsix')) {
-                    assetSource = f.source;
-                    break;
-                }
-            }
-    
-            if (!assetSource) {
-                console.error("Couldn't read template source URL from VSGallery.");
-                process.exit();
-            }
-
+            var assetSource = ext_ver.assetUri + "/Serene.Template.vsix";
             var oldFiles = fs.readdirSync(cacheDir).filter(function(x) { 
                 return x.toLowerCase().startsWith('Serene.Template.') && x.toLowerCase().endsWith('.vsix');
             });
-            console.log('Downloading latest Serene template...');
+            console.log('Downloading latest Serene template... from ' + assetSource);
             downloadHttps(assetSource, function(buffer) {
                     console.log('Download complete.');
                     fs.writeFileSync(cacheZip, buffer);
@@ -211,9 +204,17 @@ https.get({
         }
     });
 
-}).on('error', function(e) {
+});
+
+req.on('error', function(e) {
     console.log("Error while downloading template information: " + e.message);
 });
+
+req.write(
+    postdata
+);
+
+req.end();
 
 function PathMatcher(includesStr, excludesStr) {
 
@@ -336,6 +337,11 @@ function createProject(solutionName, projectName, vsTemplatePath) {
         console.log("Restoring packages for " + projectName);
         var child1 = exec('dotnet restore', {
             cwd: targetRoot
+        });
+        process.stdin.on('error', (err) => {
+          if (err.code === 'EPIPE')
+            return
+          throw err
         });
         child1.stdout.pipe(process.stdout);
         child1.stderr.pipe(process.stdin);

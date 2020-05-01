@@ -2,9 +2,9 @@
 @{
 var rtl = System.Globalization.CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
 }
-<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name"@Html.Raw(rtl ? " dir=\"rtl\"" : "")>
 <head>
-    @{Html.RenderPartial(MVC.Views.Shared._LayoutHead);}
+    <partial name="@MVC.Views.Shared._LayoutHead" />
     @RenderSection("Head", false)
     <title>@ViewData["Title"]</title>
 </head>
