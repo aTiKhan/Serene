@@ -1,15 +1,15 @@
-﻿
+﻿using Serene.Northwind.Entities;
+using Serenity.ComponentModel;
+using Serenity.Data;
+using Serenity.Web;
+
 namespace Serene.Northwind.Lookups
 {
-    using Entities;
-    using Serenity.ComponentModel;
-    using Serenity.Data;
-    using Serenity.Web;
-
     [LookupScript]
     public class OrderShipCountryLookup : RowLookupScript<Entities.OrderRow>
     {
-        public OrderShipCountryLookup()
+        public OrderShipCountryLookup(ISqlConnections sqlConnections)
+            : base(sqlConnections)
         {
             IdField = TextField = OrderRow.Fields.ShipCountry.PropertyName;
         }

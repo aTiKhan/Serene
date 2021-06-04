@@ -1,18 +1,23 @@
-﻿
+﻿using Serene.Northwind.Entities;
+using Serenity.ComponentModel;
+using Serenity.Data;
+using Serenity.Reporting;
+using System;
+using System.Collections.Generic;
+
 namespace Serene.Northwind
 {
-    using Entities;
-    using Serenity.ComponentModel;
-    using Serenity.Data;
-    using Serenity.Reporting;
-    using System;
-    using System.Collections.Generic;
-
     [Report("Northwind.OrderDetail")]
     [ReportDesign(MVC.Views.Northwind.Order.OrderDetailReport)]
     [RequiredPermission(PermissionKeys.General)]
     public class OrderDetailReport : IReport, ICustomizeHtmlToPdf
     {
+        public OrderDetailReport(ISqlConnections sqlConnections)
+        {
+            SqlConnections = sqlConnections ?? throw new ArgumentNullException(nameof(sqlConnections));
+        }
+
+        protected ISqlConnections SqlConnections { get; }
         public Int32 OrderID { get; set; }
 
         public object GetData()

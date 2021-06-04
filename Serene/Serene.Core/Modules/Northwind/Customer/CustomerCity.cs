@@ -1,15 +1,15 @@
-﻿
+﻿using Serene.Northwind.Entities;
+using Serenity.ComponentModel;
+using Serenity.Data;
+using Serenity.Web;
+
 namespace Serene.Northwind.Lookups
 {
-    using Entities;
-    using Serenity.ComponentModel;
-    using Serenity.Data;
-    using Serenity.Web;
-
     [LookupScript]
     public class CustomerCityLookup : RowLookupScript<Entities.CustomerRow>
     {
-        public CustomerCityLookup()
+        public CustomerCityLookup(ISqlConnections sqlConnections)
+            : base(sqlConnections)
         {
             IdField = TextField = CustomerRow.Fields.City.PropertyName;
         }

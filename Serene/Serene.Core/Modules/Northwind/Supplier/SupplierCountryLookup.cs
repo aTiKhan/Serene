@@ -1,14 +1,14 @@
-﻿
+﻿using Serenity.ComponentModel;
+using Serenity.Data;
+using Serenity.Web;
+
 namespace Serene.Northwind.Lookups
 {
-    using Serenity.ComponentModel;
-    using Serenity.Data;
-    using Serenity.Web;
-
     [LookupScript]
     public class SupplierCountryLookup : RowLookupScript<Entities.SupplierRow>
     {
-        public SupplierCountryLookup()
+        public SupplierCountryLookup(ISqlConnections sqlConnections)
+            : base(sqlConnections)
         {
             IdField = TextField = "Country";
         }
